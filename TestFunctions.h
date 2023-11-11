@@ -22,7 +22,7 @@ namespace de
         {
 
         }
-        double EvaluteCost(std::vector<double> inputs) const override
+        double EvaluateCost(std::vector<double> inputs) const override
         {
             assert(inputs.size() == m_dim);
 
@@ -64,7 +64,7 @@ namespace de
         {
 
         }
-        double EvaluteCost(std::vector<double> inputs) const override
+        double EvaluateCost(std::vector<double> inputs) const override
         {
             assert(inputs.size() == m_dim);
 
@@ -116,7 +116,7 @@ namespace de
 
         }
 
-        double EvaluteCost(std::vector<double> inputs) const override
+        double EvaluateCost(std::vector<double> inputs) const override
         {
             assert(inputs.size() == m_dim);
 

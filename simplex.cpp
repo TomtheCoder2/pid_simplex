@@ -1,8 +1,5 @@
 #include "DifferentialEvolution.h"
 
-
-#include <ctime>
-
 using namespace std;
 
 // the constraints for the parameters
@@ -19,9 +16,9 @@ double my_pid(double p, double i, double d) {
     return abs(42 - p + i + d);
 }
 
-class SimpleQuadriatic : public de::IOptimizable {
+class SimpleQuadratic : public de::IOptimizable {
 public:
-    double EvaluteCost(std::vector<double> inputs) const override {
+    double EvaluateCost(std::vector<double> inputs) const override {
         assert(inputs.size() == 3);
 //        cout << "x: " << inputs[0] << " y: " << inputs[1] << endl;
 
@@ -52,9 +49,9 @@ public:
 };
 
 int main() {
-    SimpleQuadriatic cost;
+    SimpleQuadratic cost;
 
-    de::DifferentialEvolution de(cost, 100, 123, true, nullptr, SimpleQuadriatic::terminalCondition);
+    de::DifferentialEvolution de(cost, 100, 123, true, nullptr, SimpleQuadratic::terminalCondition);
 
     de.Optimize(1000, true);
 

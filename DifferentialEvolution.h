@@ -8,6 +8,7 @@
 #pragma once
 
 #include <iostream>
+#include <utility>
 #include <vector>
 #include <cassert>
 #include <random>
@@ -53,13 +54,13 @@ namespace de {
             bool isConstrained;
         };
 
-        virtual double EvaluteCost(std::vector<double> inputs) const = 0;
+        virtual double EvaluateCost(std::vector<double> inputs) const = 0;
 
         virtual unsigned int NumberOfParameters() const = 0;
 
         virtual std::vector<Constraints> GetConstraints() const = 0;
 
-        virtual ~IOptimizable() {}
+        virtual ~IOptimizable() = default;
     };
 
     class DifferentialEvolution {
@@ -74,7 +75,7 @@ namespace de {
          * This check check may be turned off to increase performance if the cost function is defined
          * and has no local minimum outside of the constraints.
          * \param callback Optional callback to be called after each optimization iteration has finished.
-         * Optimization iteration is defined as processing of single population with SelectionAndCorssing method.
+         * Optimization iteration is defined as processing of single population with selectionAndCrossing method.
          */
         DifferentialEvolution(const IOptimizable &costFunction,
                               unsigned int populationSize,
@@ -89,8 +90,8 @@ namespace de {
                 m_bestAgentIndex(0),
                 m_minCost(-std::numeric_limits<double>::infinity()),
                 m_shouldCheckConstraints(shouldCheckConstraints),
-                m_callback(callback),
-                m_terminationCondition(terminationCondition) {
+                m_callback(std::move(callback)),
+                m_terminationCondition(std::move(terminationCondition)) {
             m_generator.seed(randomSeed);
             assert(m_populationSize >= 4);
 
@@ -118,7 +119,7 @@ namespace de {
                     } else {
                         distribution = std::make_shared<std::uniform_real_distribution<double>>(
                                 std::uniform_real_distribution<double>(g_defaultLowerConstraint,
-                                                                       g_defaultUpperConstarint));
+                                                                       g_defaultUpperConstraint));
                     }
 
                     agent[i] = (*distribution)(m_generator);
@@ -127,7 +128,7 @@ namespace de {
 
             // Initialize minimum cost, best agent and best agent index
             for (int i = 0; i < m_populationSize; i++) {
-                m_minCostPerAgent[i] = m_cost.EvaluteCost(m_population[i]);
+                m_minCostPerAgent[i] = m_cost.EvaluateCost(m_population[i]);
 
                 if (m_minCostPerAgent[i] < m_minCost) {
                     m_minCost = m_minCostPerAgent[i];
@@ -136,7 +137,7 @@ namespace de {
             }
         }
 
-        void SelectionAndCorssing() {
+        void selectionAndCrossing() {
             std::uniform_real_distribution<double> distribution(0, m_populationSize);
 
             double minCost = m_minCostPerAgent[0];
@@ -150,9 +151,9 @@ namespace de {
 
                 // Agents must be different from each other and from x
                 while (a == x || b == x || c == x || a == b || a == c || b == c) {
-                    a = distribution(m_generator);
-                    b = distribution(m_generator);
-                    c = distribution(m_generator);
+                    a = (int) distribution(m_generator);
+                    b = (int) distribution(m_generator);
+                    c = (int) distribution(m_generator);
                 }
 
                 // Form intermediate solution z
@@ -163,7 +164,7 @@ namespace de {
 
                 // Chose random R
                 std::uniform_real_distribution<double> distributionParam(0, m_numberOfParameters);
-                int R = distributionParam(m_generator);
+                int R = (int) distributionParam(m_generator);
 
                 // Chose random r for each dimension
                 std::vector<double> r(m_numberOfParameters);
@@ -192,7 +193,7 @@ namespace de {
                 }
 
                 // Calculate new cost and decide should the newX be kept.
-                double newCost = m_cost.EvaluteCost(newX);
+                double newCost = m_cost.EvaluateCost(newX);
                 if (newCost < m_minCostPerAgent[x]) {
                     m_population[x] = newX;
                     m_minCostPerAgent[x] = newCost;
@@ -209,7 +210,7 @@ namespace de {
             m_bestAgentIndex = bestAgentIndex;
         }
 
-        std::vector<double> GetBestAgent() const {
+        __attribute__((unused)) std::vector<double> GetBestAgent() const {
             return m_population[m_bestAgentIndex];
         }
 
@@ -220,14 +221,14 @@ namespace de {
         std::vector<std::pair<std::vector<double>, double>> GetPopulationWithCosts() const {
             std::vector<std::pair<std::vector<double>, double>> toRet;
             for (int i = 0; i < m_populationSize; i++) {
-                toRet.push_back(std::make_pair(m_population[i], m_minCostPerAgent[i]));
+                toRet.emplace_back(m_population[i], m_minCostPerAgent[i]);
             }
 
             return toRet;
         }
 
         void PrintPopulation() const {
-            for (auto agent: m_population) {
+            for (const auto& agent: m_population) {
                 for (auto &var: agent) {
                     std::cout << var << " ";
                 }
@@ -241,14 +242,14 @@ namespace de {
             // Optimization loop
             for (int i = 0; i < iterations; i++) {
                 // Optimization step
-                SelectionAndCorssing();
+                selectionAndCrossing();
 
                 if (verbose) {
                     std::cout << std::fixed << std::setprecision(5);
                     std::cout << "Current minimal cost: " << m_minCost << "\t\t";
                     std::cout << "Best agent: ";
-                    for (int i = 0; i < m_numberOfParameters; i++) {
-                        std::cout << m_population[m_bestAgentIndex][i] << " ";
+                    for (int j = 0; j < m_numberOfParameters; j++) {
+                        std::cout << m_population[m_bestAgentIndex][j] << " ";
                     }
                     std::cout << std::endl;
                 }
@@ -307,6 +308,6 @@ namespace de {
         double m_minCost;
 
         static constexpr double g_defaultLowerConstraint = -std::numeric_limits<double>::infinity();
-        static constexpr double g_defaultUpperConstarint = std::numeric_limits<double>::infinity();
+        static constexpr double g_defaultUpperConstraint = std::numeric_limits<double>::infinity();
     };
 }
